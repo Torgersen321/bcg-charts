@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BCG-Style Green Monochrome Chart</title>
+  
+  <!-- React and ReactDOM -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+  
+  <!-- Recharts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.1.13/Recharts.min.js"></script>
+  
+  <!-- Babel for JSX -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: white;
+    }
+    #root {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .chart-container {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    // Destructure components from Recharts
+    const {
+      BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, Label
+    } = Recharts;
+    
+    // Chart data
+    const data = [
+      {
+        year: '2014',
+        Channel1: 16,
+        Channel2: 7,
+        Channel3: 4,
+        Channel4: 3,
+        total: 30
+      },
+      {
+        year: '2018',
+        Channel1: 7,
+        Channel2: 13,
+        Channel3: 6,
+        Channel4: 6,
+        total: 32
+      },
+      {
+        year: '2019',
+        Channel1: 6,
+        Channel2: 14,
+        Channel3: 6,
+        Channel4: 7,
+        total: 33
+      }
+    ];
+    
+    // Green Monochrome color palette
+    const colorPalette = {
+      Channel1: "#0F5D44", // Darkest green
+      Channel2: "#177B57", // BCG emerald
+      Channel3: "#56A17F", // Medium green
+      Channel4: "#95C7A8"  // Light green
+    };
+    
+    // Text colors for readability
+    const textColors = {
+      Channel1: "#FFFFFF", // White on darkest green
+      Channel2: "#FFFFFF", // White on emerald
+      Channel3: "#000000", // Black on medium green
+      Channel4: "#000000"  // Black on light green
+    };
+    
+    // Draw connector lines between segments
+    const CustomizedConnectorLines = (props) => {
+      const { data } = props;
+      const lines = [];
+      
+      // We need at least 2 bars to draw lines
+      if (data.length < 2) return null;
+      
+      const channels = ["Channel1", "Channel2", "Channel3", "Channel4"];
+      
+      // For each pair of adjacent bars
+      for (let i = 0; i < data.length - 1; i++) {
+        const leftBar = data[i];
+        const rightBar = data[i+1];
+        
+        // Height of segments in the current stacked bar
+        let leftHeight = 0;
+        let rightHeight = 0;
+        
+        // For each channel
+        channels.forEach(channel => {
+          // Start points (right side of left bar)
+          const x1 = 120 + i * 200; // Approximate x position of bar centers
+          const y1Left = 300 - leftHeight - leftBar[channel] / 2; // Approximate y position of segment center
+          
+          // End points (left side of right bar)
+          const x2 = 120 + (i+1) * 200;
+          const y2Left = 300 - rightHeight - rightBar[channel] / 2;
+          
+          // Draw the line
+          lines.push(
+            <line 
+              key={`connector-${i}-${channel}`}
+              x1={x1} 
+              y1={y1Left} 
+              x2={x2} 
+              y2={y2Left} 
+              stroke="#aaa" 
+              strokeDasharray="3 3" 
+              strokeWidth={1} 
+            />
+          );
+          
+          // Update heights for next segment
+          leftHeight += leftBar[channel];
+          rightHeight += rightBar[channel];
+        });
+      }
+      
+      return (
+        <svg 
+          width="100%" 
+          height="100%" 
+          viewBox="0 0 600 400" 
+          style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
+        >
+          {lines}
+        </svg>
+      );
+    };
+    
+    // Main Chart Component
+    const GreenMonochromeChart = () => {
+      return (
+        <div className="chart-container">
+          <div style={{marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+            <h2 style={{fontSize: "20px", fontWeight: "bold", color: "#333", margin: 0}}>Channel Distribution by Year</h2>
+          </div>
+          
+          <div style={{backgroundColor: "#0d2f26", color: "white", padding: "8px", marginBottom: "16px"}}>
+            <h3 style={{fontWeight: "bold", margin: 0}}>[Description], [Unit]</h3>
+          </div>
+          
+          <div style={{position: "relative", height: "400px"}}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data}
+                margin={{ top: 40, right: 40, left: 40, bottom: 20 }}
+                barSize={60}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="year" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => [value, name.replace('Channel', 'Channel ')]}
+                  labelFormatter={(label) => `Year: ${label}`}
+                />
+                <Legend 
+                  formatter={(value) => value.replace('Channel', 'Channel ')} 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                />
+                
+                <Bar dataKey="Channel1" stackId="a" fill={colorPalette.Channel1} name="Channel1">
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-Channel1-${index}`} fill={colorPalette.Channel1} />
+                  ))}
+                  <Label position="center" content={({ value, x, y, width, height }) => {
+                    return value > 0 ? (
+                      <text x={x + width / 2} y={y + height / 2} fill={textColors.Channel1} textAnchor="middle" dominantBaseline="middle" fontWeight="bold">
+                        {value}
+                      </text>
+                    ) : null;
+                  }} />
+                </Bar>
+                
+                <Bar dataKey="Channel2" stackId="a" fill={colorPalette.Channel2} name="Channel2">
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-Channel2-${index}`} fill={colorPalette.Channel2} />
+                  ))}
+                  <Label position="center" content={({ value, x, y, width, height }) => {
+                    return value > 0 ? (
+                      <text x={x + width / 2} y={y + height / 2} fill={textColors.Channel2} textAnchor="middle" dominantBaseline="middle" fontWeight="bold">
+                        {value}
+                      </text>
+                    ) : null;
+                  }} />
+                </Bar>
+                
+                <Bar dataKey="Channel3" stackId="a" fill={colorPalette.Channel3} name="Channel3">
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-Channel3-${index}`} fill={colorPalette.Channel3} />
+                  ))}
+                  <Label position="center" content={({ value, x, y, width, height }) => {
+                    return value > 0 ? (
+                      <text x={x + width / 2} y={y + height / 2} fill={textColors.Channel3} textAnchor="middle" dominantBaseline="middle" fontWeight="bold">
+                        {value}
+                      </text>
+                    ) : null;
+                  }} />
+                </Bar>
+                
+                <Bar dataKey="Channel4" stackId="a" fill={colorPalette.Channel4} name="Channel4">
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-Channel4-${index}`} fill={colorPalette.Channel4} />
+                  ))}
+                  <Label position="center" content={({ value, x, y, width, height }) => {
+                    return value > 0 ? (
+                      <text x={x + width / 2} y={y + height / 2} fill={textColors.Channel4} textAnchor="middle" dominantBaseline="middle" fontWeight="bold">
+                        {value}
+                      </text>
+                    ) : null;
+                  }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            
+            {/* Total value labels */}
+            <div style={{position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none"}}>
+              <div style={{display: "flex", justifyContent: "space-around", height: "100%", position: "relative"}}>
+                {data.map((entry, index) => (
+                  <div key={`total-${index}`} style={{display: "flex", alignItems: "start", justifyContent: "center", width: "33%"}}>
+                    <div style={{backgroundColor: "white", padding: "4px 8px", borderRadius: "16px", border: "1px solid #ddd", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", marginTop: "40px"}}>
+                      <span style={{fontWeight: "bold"}}>{entry.total}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <CustomizedConnectorLines data={data} />
+          </div>
+          
+          <div style={{marginTop: "24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px"}}>
+            <div style={{border: "1px solid #ddd", padding: "16px", borderRadius: "8px"}}>
+              <h3 style={{fontWeight: "bold", marginBottom: "8px"}}>Green Monochrome Color Palette</h3>
+              <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
+                {Object.entries(colorPalette).map(([channel, color]) => (
+                  <div key={channel} style={{display: "flex", alignItems: "center", gap: "8px"}}>
+                    <div style={{width: "24px", height: "24px", borderRadius: "4px", backgroundColor: color}}></div>
+                    <span>{channel.replace('Channel', 'Channel ')}</span>
+                    <span style={{color: "#666", fontSize: "14px"}}>{color}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{marginTop: "16px", paddingTop: "8px", borderTop: "1px solid #eee"}}>
+                <p style={{fontSize: "14px", color: "#666"}}>BCG-inspired monochromatic green palette for executive presentations.</p>
+              </div>
+            </div>
+            <div style={{border: "1px solid #ddd", padding: "16px", borderRadius: "8px", backgroundColor: "#f9f9f9"}}>
+              <h3 style={{fontWeight: "bold", marginBottom: "8px"}}>Executive Summary</h3>
+              <ul style={{paddingLeft: "20px", margin: "0 0 16px 0"}}>
+                <li>Channel 1 decreased from 16 to 6 between 2014 and 2019 (-63%)</li>
+                <li>Channel 2 doubled from 7 to 14 over the same period (+100%)</li>
+                <li>Channels 3 and 4 showed steady growth (+50% and +133%)</li>
+                <li>Total value increased from 30 to 33 (10% growth)</li>
+              </ul>
+              <div style={{marginTop: "16px", paddingTop: "8px", borderTop: "1px solid #ddd"}}>
+                <p style={{fontSize: "14px", fontWeight: "500"}}>Key Insight:</p>
+                <p style={{fontSize: "14px"}}>While overall growth is positive, the sharp decline in Channel 1 requires immediate attention despite being offset by Channel 2's strong performance.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+    
+    // Render the chart
+    ReactDOM.render(<GreenMonochromeChart />, document.getElementById('root'));
+  </script>
+</body>
+</html>
